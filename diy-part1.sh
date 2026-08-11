@@ -8,13 +8,17 @@ if [ ! -d package/luci-theme-proton2025 ]; then
     git clone --depth 1 https://github.com/ChesterGoodiny/luci-theme-proton2025.git package/luci-theme-proton2025
 fi
 
-# add fantastic-packages feed directly to the OpenWrt tree
-rm -rf package/fantastic_packages
-if [ ! -d package/fantastic_packages ]; then
-    git clone --depth 1 --branch 23.05 https://github.com/fantastic-packages/packages.git package/fantastic_packages
+# add fantastic-packages feed according to upstream instructions
+rm -rf fantastic_packages
+if [ ! -d fantastic_packages ]; then
+    git clone --depth 1 --branch 23.05 --no-tags --recurse-submodules https://github.com/fantastic-packages/packages.git fantastic_packages
 fi
 
-echo 'src-link fantastic_packages package/fantastic_packages' >>feeds.conf.default
+cat <<'EOF' >>feeds.conf.default
+src-link fantastic_packages_packages fantastic_packages/feeds/packages
+src-link fantastic_packages_luci     fantastic_packages/feeds/luci
+src-link fantastic_packages_special  fantastic_packages/feeds/special
+EOF
 
 # add custom DTS
 mkdir -p target/linux/ramips/image/mt7621
