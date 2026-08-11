@@ -1,39 +1,78 @@
-**English** | [中文](https://p3terx.com/archives/build-openwrt-with-github-actions.html)
+# 🛠 Xiaomi Mi Router 4A Gigabit Edition (32MB Flash Mod)
 
-# Actions-OpenWrt
+Персональные кастомные прошивки, собранные **для себя** под Xiaomi Mi Router 4A Gigabit Edition v1
+с **перепаянной SPI-flash MX25L25635F (32 МБ)**.
 
-[![LICENSE](https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square&label=LICENSE)](https://github.com/P3TERX/Actions-OpenWrt/blob/master/LICENSE)
-![GitHub Stars](https://img.shields.io/github/stars/P3TERX/Actions-OpenWrt.svg?style=flat-square&label=Stars&logo=github)
-![GitHub Forks](https://img.shields.io/github/forks/P3TERX/Actions-OpenWrt.svg?style=flat-square&label=Forks&logo=github)
+> ⚠️ Проект не является официальным. Используйте на свой страх и риск.
 
-A template for building OpenWrt with GitHub Actions
+---
 
-## Usage
+## 📦 Текущий статус
 
-- Click the [Use this template](https://github.com/P3TERX/Actions-OpenWrt/generate) button to create a new repository.
-- Generate `.config` files using [Lean's OpenWrt](https://github.com/coolsnowwolf/lede) source code. ( You can change it through environment variables in the workflow file. )
-- Push `.config` file to the GitHub repository.
-- Select `Build OpenWrt` on the Actions page.
-- Click the `Run workflow` button.
-- When the build is complete, click the `Artifacts` button in the upper right corner of the Actions page to download the binaries.
+На данный момент доступны прошивки:
 
-## Tips
+- **ImmortalWRT 24.10.4**
+- Минимальный набор пакетов
+- Оптимизирована под 32 МБ flash
+- Поддерживается обновление пакетов от официального источника
+- Добавлены сторонние репозитории пакетов
 
-- It may take a long time to create a `.config` file and build the OpenWrt firmware. Thus, before create repository to build your own firmware, you may check out if others have already built it which meet your needs by simply [search `Actions-Openwrt` in GitHub](https://github.com/search?q=Actions-openwrt).
-- Add some meta info of your built firmware (such as firmware architecture and installed packages) to your repository introduction, this will save others' time.
+---
 
-## Credits
+## 🔧 Характеристики прошивки
 
-- [Microsoft Azure](https://azure.microsoft.com)
-- [GitHub Actions](https://github.com/features/actions)
-- [OpenWrt](https://github.com/openwrt/openwrt)
-- [coolsnowwolf/lede](https://github.com/coolsnowwolf/lede)
-- [Mikubill/transfer](https://github.com/Mikubill/transfer)
-- [softprops/action-gh-release](https://github.com/softprops/action-gh-release)
-- [Mattraks/delete-workflow-runs](https://github.com/Mattraks/delete-workflow-runs)
-- [dev-drprasad/delete-older-releases](https://github.com/dev-drprasad/delete-older-releases)
-- [peter-evans/repository-dispatch](https://github.com/peter-evans/repository-dispatch)
+- 🧠 **Проект:** ImmortalWRT  
+- 📌 **Версия:** 24.10.4  
+- 💾 **Flash:** 32 МБ (MX25L25635F)  
+- 📡 **Устройство:** Xiaomi Mi Router 4A Gigabit Edition v1
+- 🚀 **Загрузчик:** **U-Boot**, **Breed**
+- 📦 **Свободно для установки пакетов:** ~20 МБ
+- 🆙 **IP адрес роутера:** 10.10.11.1
 
-## License
+---
 
-[MIT](https://github.com/P3TERX/Actions-OpenWrt/blob/main/LICENSE) © [**P3TERX**](https://p3terx.com)
+## 📚 Репозитории пакетов
+
+В прошивку добавлены дополнительные источники пакетов:
+
+- [🔗](https://github.com/kiddin9/Kwrt) openwrt.ai/kwrt
+- [🔗](https://github.com/fantastic-packages/packages) fantastic-packages
+
+---
+
+### Скачать:
+
+1. [Версия initramfs для прошивки из-под загрузчика (bootloader)](./immortalwrt/immortalwrt-24.10.4-ramips-mt7621-xiaomi_mi-router-4a-gigabit-initramfs-kernel.bin)
+2. [Версия с IPv6 и дополнительными пакетами](./immortalwrt/immortalwrt-24.10.4-mesh-32mb-ru-ramips-mt7621-xiaomi_mi-router-4a-gigabit-squashfs-sysupgrade.bin)
+3. [Версия без IPv6, но с дополнительными пакетами](./immortalwrt/immortalwrt-24.10.4-mesh-without-ipv6-32mb-ru-ramips-mt7621-xiaomi_mi-router-4a-gigabit-squashfs-sysupgrade.bin)
+4. [Версия без дополнительных пакетов, только с изменённой разметкой](./immortalwrt/immortalwrt-24.10.4-ramips-mt7621-xiaomi_mi-router-4a-gigabit-squashfs-sysupgrade.bin)
+5. [Bootloader Breed](./immortalwrt/boot_breed_30000.bin)
+6. [Bootloader uBoot](./immortalwrt/uboot-mtk_r4a.bin)
+   
+---
+## 📥 Установка
+
+[Инструкция по прошивке доступна в теме форума 4PDA](https://4pda.to/forum/index.php?showtopic=988197&st=23520)
+
+### Для U-Boot:
+1. Залить прошивку через U-Boot (TFTP / UART / Web — по вашей конфигурации)
+2. Первый запуск может занять больше времени
+3. Далее стандартная настройка ImmortalWRT
+
+### Для Breed:
+- [Ссылка на прошивку для Breed](https://4pda.to/forum/index.php?showtopic=988197&view=findpost&p=136835762)  
+> ⚠️ Использовать на свой страх и риск. Поддержка Breed ограничена, прошивка тестировалась на MX25L25635F 32 МБ.
+
+---
+
+## ❗ Важно
+
+- Прошивки собраны **под конкретное железо**
+- Не предназначены для других моделей Mi Router 4A 
+- Перед прошивкой **обязательно сделайте backup**
+
+---
+
+✅ Собрано для личного использования.  
+✅ Если вам понравился проект — не забудьте поставить звёздочку ⭐   
+✅ [Ссылка для покупки MX25L25635F](https://ali.click/sxjrui)
