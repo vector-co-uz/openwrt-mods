@@ -18,3 +18,21 @@
 
 # Modify hostname
 #sed -i 's/OpenWrt/P3TERX-Router/g' package/base-files/files/bin/config_generate
+
+# Make Proton2025 the default LuCI theme after first boot
+mkdir -p files/etc/uci-defaults
+cat > files/etc/uci-defaults/40-luci-theme <<'EOF'
+#!/bin/sh
+
+if [ -d /www/luci-static/proton2025 ]; then
+    uci set luci.main.mediaurlbase='/luci-static/proton2025'
+    uci commit luci
+fi
+
+exit 0
+EOF
+chmod +x files/etc/uci-defaults/40-luci-theme
+
+# Add additional first-boot settings
+cp -f "$PWD/files/99-vector-settings" files/etc/uci-defaults/99-vector-settings
+chmod +x files/etc/uci-defaults/99-vector-settings

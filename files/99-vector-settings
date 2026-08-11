@@ -1,0 +1,71 @@
+#!/bin/sh
+
+#
+# SYSTEM
+#
+
+uci set system.@system[0].hostname='mi4a'
+uci set system.@system[0].timezone='<+05>-5'
+uci set system.@system[0].zonename='Asia/Tashkent'
+
+uci set system.ntp.enabled='1'
+uci set system.ntp.enable_server='0'
+
+uci add_list system.ntp.server='pool.ntp.org'
+uci add_list system.ntp.server='time.google.com'
+
+
+#
+# NETWORK
+#
+
+uci set network.lan.ipaddr='10.10.11.1'
+uci set network.lan.netmask='255.255.255.0'
+
+
+#
+# WIFI
+#
+
+uci set wireless.radio0.disabled='0'
+uci set wireless.radio0.channel='auto'
+uci set wireless.radio0.htmode='HT40'
+uci set wireless.radio0.country='UZ'
+
+uci set wireless.default_radio0.ssid='Vector'
+uci set wireless.default_radio0.encryption='sae-mixed'
+uci set wireless.default_radio0.key='p@ssw0rd'
+
+uci set wireless.radio1.disabled='0'
+uci set wireless.radio1.channel='auto'
+uci set wireless.radio1.country='UZ'
+
+uci set wireless.default_radio1.ssid='Vector_5G'
+uci set wireless.default_radio1.encryption='sae-mixed'
+uci set wireless.default_radio1.key='p@ssw0rd'
+
+
+#
+# LUCI
+#
+
+if [ -d /www/luci-static/glass ]; then
+    uci set luci.main.mediaurlbase='/luci-static/glass'
+fi
+
+
+uci set dropbear.@dropbear[0].PasswordAuth='on'
+uci set dropbear.@dropbear[0].RootPasswordAuth='on'
+
+
+#
+# COMMIT
+#
+
+uci commit system
+uci commit network
+uci commit wireless
+uci commit dropbear
+uci commit luci
+
+exit 0

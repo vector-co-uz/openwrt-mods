@@ -1,16 +1,5 @@
-#
-# https://github.com/P3TERX/Actions-OpenWrt
-#
-# File: .github/workflows/openwrt-bulder.yml
-# Description: Build OpenWrt using GitHub Actions
-#
-# Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
 
-name: OpenWrt Builder
+name: Immortalwrt Builder
 
 on:
   repository_dispatch:
@@ -35,6 +24,16 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: full
+            config_source: files/.config_full
+            artifact_suffix: full
+          - name: initram
+            config_source: files/.config_initram
+            artifact_suffix: initram
 
     steps:
     - name: Checkout
@@ -76,8 +75,13 @@ jobs:
 
     - name: Load custom configuration
       run: |
-        [ -e files ] && mv files imwrt/files
-        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE imwrt/.config
+        [ -e files ] && cp -R files imwrt/files
+        CONFIG_NAME="$(basename "${{ matrix.config_source }}")"
+        if [ -e "$GITHUB_WORKSPACE/files/$CONFIG_NAME" ]; then
+          cp "$GITHUB_WORKSPACE/files/$CONFIG_NAME" imwrt/.config
+        elif [ -e "$GITHUB_WORKSPACE/$CONFIG_NAME" ]; then
+          cp "$GITHUB_WORKSPACE/$CONFIG_NAME" imwrt/.config
+        fi
         chmod +x $DIY_P2_SH
         cd imwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
@@ -111,7 +115,7 @@ jobs:
       uses: actions/upload-artifact@main
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       with:
-        name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+        name: OpenWrt_bin_${{ matrix.artifact_suffix }}${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: imwrt/bin
 
     - name: Organize files
@@ -127,7 +131,7 @@ jobs:
       uses: actions/upload-artifact@main
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+        name: OpenWrt_firmware_${{ matrix.artifact_suffix }}${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
 
     - name: Generate release tag

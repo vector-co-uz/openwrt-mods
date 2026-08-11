@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -d /www/luci-static/proton2025 ]; then
+    uci set luci.main.mediaurlbase='/luci-static/proton2025'
+    uci commit luci
+fi
+
+exit 0

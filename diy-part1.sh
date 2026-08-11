@@ -1,26 +1,31 @@
 #!/bin/bash
 #
-# https://github.com/P3TERX/Actions-OpenWrt
-# File name: diy-part1.sh
-# Description: OpenWrt DIY script part 1 (Before Update feeds)
-#
-# Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
 
-# Uncomment a feed source
-#sed -i 's/^#\(.*helloworld\)/\1/' feeds.conf.default
+# add proton theme package directly to the OpenWrt tree
+rm -rf package/luci-theme-proton2025
+mkdir -p package
+if [ ! -d package/luci-theme-proton2025 ]; then
+    git clone --depth 1 https://github.com/ChesterGoodiny/luci-theme-proton2025.git package/luci-theme-proton2025
+fi
 
-# Add a feed source
-echo 'src-git helloworld https://github.com/fw876/helloworld' >>feeds.conf.default
-#echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default
+# add fantastic-packages feed directly to the OpenWrt tree
+rm -rf package/fantastic_packages
+if [ ! -d package/fantastic_packages ]; then
+    git clone --depth 1 --branch 23.05 https://github.com/fantastic-packages/packages.git package/fantastic_packages
+fi
 
-# добавляем свой DTS
+echo 'src-link fantastic_packages package/fantastic_packages' >>feeds.conf.default
+
+# add custom DTS
 mkdir -p target/linux/ramips/image/mt7621
 
-cp -f files/mt7621_xiaomi_mi-router-4a-gigabit-32m.dts \
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+src_root="${GITHUB_WORKSPACE:-$script_dir}"
+
+cp -f "$src_root/files/mt7621_xiaomi_mi-router-4a-gigabit-32m.dts" \
+target/linux/ramips/dts/
+
+cp -f "$src_root/files/mt7621_xiaomi_mi-router-4a-common.dtsi" \
 target/linux/ramips/dts/
 
 echo "Custom DTS copied"
