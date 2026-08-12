@@ -17,7 +17,7 @@ env:
   DIY_P2_SH: diy-part2.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
-  UPLOAD_RELEASE: false
+  UPLOAD_RELEASE: true
   TZ: Asia/Tashkent
 
 
@@ -97,10 +97,12 @@ jobs:
       if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
         cd imwrt/bin/targets/*/*
-        rm -rf packages
-        mkdir -p "$GITHUB_WORKSPACE/artifacts/initram"
-        cp -a "$PWD"/. "$GITHUB_WORKSPACE/artifacts/initram/"
-        echo "INITRAM_FIRMWARE=$GITHUB_WORKSPACE/artifacts/initram" >> $GITHUB_ENV
+        mkdir -p "$GITHUB_WORKSPACE/artifacts/release"
+        cp -a initramfs-kernel.bin "$GITHUB_WORKSPACE/artifacts/release/"
+        sha256sum initramfs-kernel.bin > "$GITHUB_WORKSPACE/artifacts/release/initramfs-kernel.bin.sha256sums"
+        cp -a profiles.json "$GITHUB_WORKSPACE/artifacts/release/initramfs"
+        echo "INITRAM_FIRMWARE=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
+        echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload initram firmware
@@ -130,20 +132,16 @@ jobs:
       if: (!cancelled())
       run: df -hT
 
-    - name: Upload bin directory
-      uses: actions/upload-artifact@main
-      if: steps.compile_squash.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
-      with:
-        name: OpenWrt_bin_squash${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
-        path: imwrt/bin
-
     - name: Organize squash firmware
       id: organize_squash
       if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
         cd imwrt/bin/targets/*/*
         rm -rf packages
+        mkdir -p "$GITHUB_WORKSPACE/artifacts/release"
+        cp -a . "$GITHUB_WORKSPACE/artifacts/release/"
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload squash firmware
@@ -170,7 +168,8 @@ jobs:
       with:
         tag_name: ${{ steps.tag.outputs.release_tag }}
         body_path: release.txt
-        files: ${{ env.FIRMWARE }}/*
+        files: |
+          ${{ env.RELEASE_DIR }}/*
 
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@main
@@ -185,4 +184,4 @@ jobs:
         keep_latest: 3
         delete_tags: true
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
