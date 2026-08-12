@@ -1,0 +1,87 @@
+
+name: Immortalwrt Builder
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@main
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+        sudo docker image prune --all --force
+        sudo -E apt-get -qq update
+        sudo -E apt-get -qq install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
+        sudo mkdir -p /workdir
+        sudo chown $USER:$GROUPS /workdir
+
+    # ============================================================
+    # GOTIFY - FINAL BUILD STATUS
+    # ============================================================
+
+    - name: Notify Gotify - final build status
+      if: always()
+      env:
+        GOTIFY_URL: ${{ secrets.GOTIFY_URL }}
+        GOTIFY_TOKEN: ${{ secrets.GOTIFY_TOKEN }}
+        RELEASE_TAG: ${{ steps.tag.outputs.release_tag }}
+      run: |
+        if [ "${{ job.status }}" = "success" ]; then
+
+          TITLE="🎉 ImmortalWrt Build SUCCESS"
+
+          MESSAGE="Сборка успешно завершена%0A%0A"
+          MESSAGE="${MESSAGE}Device: Xiaomi Mi Router 4A Gigabit 32MB%0A"
+          MESSAGE="${MESSAGE}Branch: $REPO_BRANCH%0A"
+          MESSAGE="${MESSAGE}IMAGE_SIZE: 30208k%0A"
+          MESSAGE="${MESSAGE}Commit: $GITHUB_SHA%0A%0A"
+
+          if [ -n "$RELEASE_TAG" ]; then
+            MESSAGE="${MESSAGE}Release:%0A"
+            MESSAGE="${MESSAGE}$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG%0A%0A"
+          fi
+
+          MESSAGE="${MESSAGE}Workflow:%0A"
+          MESSAGE="${MESSAGE}$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+          PRIORITY=10
+
+        else
+
+          TITLE="❌ ImmortalWrt Build FAILED"
+
+          MESSAGE="Сборка завершилась ошибкой%0A%0A"
+          MESSAGE="${MESSAGE}Device: Xiaomi Mi Router 4A Gigabit 32MB%0A"
+          MESSAGE="${MESSAGE}Branch: $REPO_BRANCH%0A"
+          MESSAGE="${MESSAGE}Commit: $GITHUB_SHA%0A%0A"
+          MESSAGE="${MESSAGE}Logs:%0A"
+          MESSAGE="${MESSAGE}$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+          PRIORITY=10
+
+        fi
+
+        curl -fsS \
+          -X POST \
+          "$GOTIFY_URL/message" \
+          -H "X-Gotify-Key: $GOTIFY_TOKEN" \
+          -F "title=$TITLE" \
+          -F "message=$MESSAGE" \
+          -F "priority=$PRIORITY"
