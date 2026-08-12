@@ -178,11 +178,59 @@ jobs:
         files: |
           ${{ env.RELEASE_DIR }}/*
 
-    - name: Delete workflow runs
-      uses: Mattraks/delete-workflow-runs@main
-      with:
-        retain_days: 0
-        keep_minimum_runs: 2
+    # ============================================================
+    # GOTIFY - FINAL BUILD STATUS
+    # ============================================================
+
+    - name: Notify Gotify - final build status
+      if: always()
+      env:
+        GOTIFY_URL: ${{ secrets.GOTIFY_URL }}
+        GOTIFY_TOKEN: ${{ secrets.GOTIFY_TOKEN }}
+        RELEASE_TAG: ${{ steps.tag.outputs.release_tag }}
+      run: |
+        if [ "${{ job.status }}" = "success" ]; then
+
+          TITLE="🎉 ImmortalWrt Build SUCCESS"
+
+          MESSAGE="Сборка успешно завершена%0A%0A"
+          MESSAGE="${MESSAGE}Device: Xiaomi Mi Router 4A Gigabit 32MB%0A"
+          MESSAGE="${MESSAGE}Branch: $REPO_BRANCH%0A"
+          MESSAGE="${MESSAGE}IMAGE_SIZE: 30208k%0A"
+          MESSAGE="${MESSAGE}Commit: $GITHUB_SHA%0A%0A"
+
+          if [ -n "$RELEASE_TAG" ]; then
+            MESSAGE="${MESSAGE}Release:%0A"
+            MESSAGE="${MESSAGE}$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG%0A%0A"
+          fi
+
+          MESSAGE="${MESSAGE}Workflow:%0A"
+          MESSAGE="${MESSAGE}$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+          PRIORITY=10
+
+        else
+
+          TITLE="❌ ImmortalWrt Build FAILED"
+
+          MESSAGE="Сборка завершилась ошибкой%0A%0A"
+          MESSAGE="${MESSAGE}Device: Xiaomi Mi Router 4A Gigabit 32MB%0A"
+          MESSAGE="${MESSAGE}Branch: $REPO_BRANCH%0A"
+          MESSAGE="${MESSAGE}Commit: $GITHUB_SHA%0A%0A"
+          MESSAGE="${MESSAGE}Logs:%0A"
+          MESSAGE="${MESSAGE}$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+          PRIORITY=10
+
+        fi
+
+        curl -fsS \
+          -X POST \
+          "$GOTIFY_URL/message" \
+          -H "X-Gotify-Key: $GOTIFY_TOKEN" \
+          -F "title=$TITLE" \
+          -F "message=$MESSAGE" \
+          -F "priority=$PRIORITY"
 
     - name: Remove old Releases
       uses: dev-drprasad/delete-older-releases@master
