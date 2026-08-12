@@ -97,9 +97,11 @@ jobs:
       if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
         cd imwrt/bin/targets/*/*
+        initram_file="$(ls *initramfs-kernel.bin 2>/dev/null | head -n 1)"
+        test -n "$initram_file"
         mkdir -p "$GITHUB_WORKSPACE/artifacts/release"
-        cp -a initramfs-kernel.bin "$GITHUB_WORKSPACE/artifacts/release/"
-        sha256sum initramfs-kernel.bin > "$GITHUB_WORKSPACE/artifacts/release/initramfs-kernel.bin.sha256sums"
+        cp -a "$initram_file" "$GITHUB_WORKSPACE/artifacts/release/"
+        sha256sum "$initram_file" > "$GITHUB_WORKSPACE/artifacts/release/${initram_file}.sha256sums"
         cp -a profiles.json "$GITHUB_WORKSPACE/artifacts/release/initramfs"
         echo "INITRAM_FIRMWARE=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
         echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
