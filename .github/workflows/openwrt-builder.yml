@@ -81,10 +81,38 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
+    - name: Add Xiaomi Mi Router 4A 32MB device
+      run: |
+        cd imwrt
+
+        MT7621_MK="target/linux/ramips/image/mt7621.mk"
+
+        if ! grep -q '^define Device/xiaomi_mi-router-4a-gigabit-32mb$' "$MT7621_MK"; then
+          cat >> "$MT7621_MK" <<'EOF'
+    define Device/xiaomi_mi-router-4a-gigabit-32mb
+      $(Device/dsa-migration)
+      $(Device/uimage-lzma-loader)
+      IMAGE_SIZE := 30208k
+      DEVICE_VENDOR := Xiaomi
+      DEVICE_MODEL := Mi Router 4A
+      DEVICE_VARIANT := Gigabit Edition 32MB
+      DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
+    endef
+    TARGET_DEVICES += xiaomi_mi-router-4a-gigabit-32mb
+    EOF
+        else
+          echo "Device xiaomi_mi-router-4a-gigabit-32mb already exists"
+        fi
+
+        grep -A9 '^define Device/xiaomi_mi-router-4a-gigabit-32mb$' "$MT7621_MK"
+
     - name: Compile initram firmware
       id: compile_initram
       run: |
         cd imwrt
+        echo "Checking initram config for 32MB device"
+        grep -q '^CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_mi-router-4a-gigabit-32mb=y' .config
+        grep -q '^CONFIG_TARGET_ROOTFS_INITRAMFS=y' .config
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
         echo "status=success" >> $GITHUB_OUTPUT
@@ -124,6 +152,8 @@ jobs:
       id: compile_squash
       run: |
         cd imwrt
+        echo "Checking squash config for 32MB device"
+        grep -q '^CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_mi-router-4a-gigabit-32mb=y' .config
         make defconfig
         make download -j8
         echo -e "$(nproc) thread compile"
@@ -141,7 +171,7 @@ jobs:
         cd imwrt/bin/targets/*/*
         rm -rf packages
         mkdir -p "$GITHUB_WORKSPACE/artifacts/release"
-        cp -a . "$GITHUB_WORKSPACE/artifacts/release/"
+        find . -maxdepth 1 -type f ! -name '*initram*' -exec cp -a {} "$GITHUB_WORKSPACE/artifacts/release/" \;
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
