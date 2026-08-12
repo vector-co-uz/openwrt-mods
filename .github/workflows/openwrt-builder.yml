@@ -104,8 +104,8 @@ jobs:
         test -n "$initram_file"
         mkdir -p "$GITHUB_WORKSPACE/artifacts/release"
         cp -a "$initram_file" "$GITHUB_WORKSPACE/artifacts/release/"
-        sha256sum "$initram_file" > "$GITHUB_WORKSPACE/artifacts/release/${initram_file}.sha256sums"
-        cp -a profiles.json "$GITHUB_WORKSPACE/artifacts/release/initramfs"
+        sha256sum "$initram_file" > "$GITHUB_WORKSPACE/artifacts/release/initramfs-sha256sums"
+        cp -a profiles.json "$GITHUB_WORKSPACE/artifacts/release/initramfs-profiles.json"
         echo "INITRAM_FIRMWARE=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
         echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
@@ -129,7 +129,6 @@ jobs:
         cd imwrt
         echo "Checking squash config for 32MB device"
         grep -q '^CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_mi-router-4a-gigabit-32mb=y' .config
-        make defconfig
         make download -j8
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 V=s
