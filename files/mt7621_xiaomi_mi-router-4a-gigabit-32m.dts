@@ -1,6 +1,6 @@
 /dts-v1/;
 
-#include "mt7621_xiaomi_mi-router-4a-common.dtsi"
+#include "mt7621_xiaomi_mi-router-4a-32m-common.dtsi"
 
 / {
 	compatible = "xiaomi,mi-router-4a-gigabit", "mediatek,mt7621";
