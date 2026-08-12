@@ -1,5 +1,5 @@
 
-name: Immortalwrt Builder
+name: GTFY Test
 
 on:
   repository_dispatch:
