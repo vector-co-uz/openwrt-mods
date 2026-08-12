@@ -81,31 +81,6 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
-    - name: Add Xiaomi Mi Router 4A 32MB device
-      run: |
-        cd imwrt
-
-        MT7621_MK="target/linux/ramips/image/mt7621.mk"
-
-        if ! grep -q '^define Device/xiaomi_mi-router-4a-gigabit-32mb$' "$MT7621_MK"; then
-          cat >> "$MT7621_MK" <<'EOF'
-    define Device/xiaomi_mi-router-4a-gigabit-32mb
-      $(Device/dsa-migration)
-      $(Device/uimage-lzma-loader)
-      IMAGE_SIZE := 30208k
-      DEVICE_VENDOR := Xiaomi
-      DEVICE_MODEL := Mi Router 4A
-      DEVICE_VARIANT := Gigabit Edition 32MB
-      DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
-    endef
-    TARGET_DEVICES += xiaomi_mi-router-4a-gigabit-32mb
-    EOF
-        else
-          echo "Device xiaomi_mi-router-4a-gigabit-32mb already exists"
-        fi
-
-        grep -A9 '^define Device/xiaomi_mi-router-4a-gigabit-32mb$' "$MT7621_MK"
-
     - name: Compile initram firmware
       id: compile_initram
       run: |

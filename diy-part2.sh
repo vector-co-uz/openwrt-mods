@@ -36,3 +36,25 @@ chmod +x files/etc/uci-defaults/40-luci-theme
 # Add additional first-boot settings
 cp -f "$PWD/files/99-vector-settings" files/etc/uci-defaults/99-vector-settings
 chmod +x files/etc/uci-defaults/99-vector-settings
+
+# Add Xiaomi Mi Router 4A Gigabit Edition 32MB device definition
+MT7621_MK="target/linux/ramips/image/mt7621.mk"
+if [ -f "$MT7621_MK" ]; then
+  if ! grep -q '^define Device/xiaomi_mi-router-4a-gigabit-32mb$' "$MT7621_MK"; then
+    cat >> "$MT7621_MK" <<'EOF'
+
+define Device/xiaomi_mi-router-4a-gigabit-32mb
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 30208k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 4A
+  DEVICE_VARIANT := Gigabit Edition 32MB
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
+endef
+TARGET_DEVICES += xiaomi_mi-router-4a-gigabit-32mb
+EOF
+  fi
+else
+  echo "Warning: $MT7621_MK not found" >&2
+fi
