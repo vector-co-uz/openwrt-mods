@@ -29,9 +29,6 @@ src_root="${GITHUB_WORKSPACE:-$script_dir}"
 cp -f "$src_root/files/mt7621_xiaomi_mi-router-4a-gigabit-32mb.dts" \
 target/linux/ramips/dts/
 
-cp -f "$src_root/files/mt7621_xiaomi_mi-router-4a-32mb-common.dtsi" \
-target/linux/ramips/dts/
-
 echo "Custom DTS copied"
 
 # Add Xiaomi Mi Router 4A Gigabit Edition 32MB device definition
