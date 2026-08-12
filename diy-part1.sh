@@ -26,10 +26,33 @@ mkdir -p target/linux/ramips/image/mt7621
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 src_root="${GITHUB_WORKSPACE:-$script_dir}"
 
-cp -f "$src_root/files/mt7621_xiaomi_mi-router-4a-gigabit-32m.dts" \
+cp -f "$src_root/files/mt7621_xiaomi_mi-router-4a-gigabit-32mb.dts" \
 target/linux/ramips/dts/
 
-cp -f "$src_root/files/mt7621_xiaomi_mi-router-4a-common.dtsi" \
+cp -f "$src_root/files/mt7621_xiaomi_mi-router-4a-32mb-common.dtsi" \
 target/linux/ramips/dts/
 
 echo "Custom DTS copied"
+
+# Add Xiaomi Mi Router 4A Gigabit Edition 32MB device definition
+MT7621_MK="target/linux/ramips/image/mt7621.mk"
+
+if [ -f "$MT7621_MK" ]; then
+  if ! grep -q '^define Device/xiaomi_mi-router-4a-gigabit-32mb$' "$MT7621_MK"; then
+    cat >> "$MT7621_MK" <<'EOF'
+
+define Device/xiaomi_mi-router-4a-gigabit-32mb
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 30208k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 4A
+  DEVICE_VARIANT := Gigabit Edition 32MB
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
+endef
+TARGET_DEVICES += xiaomi_mi-router-4a-gigabit-32mb
+EOF
+  fi
+else
+  echo "Warning: $MT7621_MK not found" >&2
+fi
