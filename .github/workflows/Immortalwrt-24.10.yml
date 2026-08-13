@@ -11,6 +11,7 @@ permissions:
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: openwrt-24.10
+  PRODUCT_NAME: "ImmortalWRT"
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: .config
   DIY_P1_SH: diy-part3.sh
@@ -101,20 +102,26 @@ jobs:
       run: |
         cd imwrt/bin/targets/*/*
 
-        # Определяем версию OpenWrt/ImmortalWrt
-        VERSION=$(grep '^CONFIG_VERSION_NUMBER=' "$GITHUB_WORKSPACE/imwrt/.config" | cut -d'"' -f2)
+        # Определяем версию OpenWrt/ImmortalWrt: предпочитаем REPO_BRANCH, затем .config, затем git, потом timestamp
+        VERSION="${REPO_BRANCH:-}"
 
         if [ -z "$VERSION" ]; then
-          echo "ERROR: Cannot determine firmware version"
-          exit 1
+          VERSION=$(grep '^CONFIG_VERSION_NUMBER=' "$GITHUB_WORKSPACE/imwrt/.config" | cut -d'"' -f2 || true)
         fi
 
-        # Берём только major.minor
-        VERSION_SHORT=$(echo "$VERSION" | grep -oE '^[0-9]+\.[0-9]+')
+        if [ -z "$VERSION" ]; then
+          VERSION=$(git -C "$GITHUB_WORKSPACE/imwrt" describe --tags --always 2>/dev/null || true)
+        fi
 
+        if [ -z "$VERSION" ]; then
+          echo "WARNING: Cannot determine firmware version from REPO_BRANCH/.config/git; using timestamp fallback"
+          VERSION="0.0.0-$(date +%Y%m%d%H%M)"
+        fi
+
+        # Берём только major.minor из ветки или версии (пример: openwrt-24.10 -> 24.10)
+        VERSION_SHORT=$(echo "$VERSION" | grep -oE '[0-9]+\.[0-9]+' || true)
         if [ -z "$VERSION_SHORT" ]; then
-          echo "ERROR: Cannot determine major.minor version from: $VERSION"
-          exit 1
+          VERSION_SHORT=$(date +"%Y.%m.%d")
         fi
 
         echo "Detected OpenWrt version: $VERSION"
@@ -137,7 +144,7 @@ jobs:
         cp -a profiles.json \
           "$GITHUB_WORKSPACE/artifacts/release/immortalwrt-${VERSION_SHORT}-mi4a-32mb-profiles.json"
 
-        echo "INITRAM_FIRMWARE=$GITHUB_WORKSPACE/artifacts/release" >> "$GITHUB_ENV"
+        echo "INITRAM_FIRMWARE=$GITHUB_WORKSPACE/artifacts/release/$NEW_NAME" >> "$GITHUB_ENV"
         echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> "$GITHUB_ENV"
         echo "VERSION_SHORT=$VERSION_SHORT" >> "$GITHUB_ENV"
 
@@ -269,7 +276,7 @@ jobs:
           > immortalwrt-${VERSION}-mi4a-32mb-squashfs-sysupgrade.bin.sha256sums
 
 
-        echo "FIRMWARE=$GITHUB_WORKSPACE/artifacts/release" >> "$GITHUB_ENV"
+        echo "FIRMWARE=$GITHUB_WORKSPACE/artifacts/release/immortalwrt-${VERSION}-mi4a-32mb-squashfs-sysupgrade.bin" >> "$GITHUB_ENV"
         echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> "$GITHUB_ENV"
 
         echo "=== RELEASE FILES ==="
@@ -288,9 +295,34 @@ jobs:
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
-        echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
-        touch release.txt
-        [ ${UPLOAD_GOFILE} = true && ${{ steps.gofile.outputs.url }} ] && echo "🔗 [GoFile](${{ steps.gofile.outputs.url }})" >> release.txt
+        # Compose release tag from product, version, device and build date
+        VERSION="${VERSION_SHORT:-$(date +%Y.%m.%d)}"
+        DEVICE="${DEVICE_NAME#_}"
+        FILE_DATE_STR="${FILE_DATE#_}"
+
+        # fallback values
+        [ -z "$DEVICE" ] && DEVICE="unknown-device"
+        [ -z "$FILE_DATE_STR" ] && FILE_DATE_STR="$(date +%Y%m%d%H%M)"
+
+        release_tag="${PRODUCT_NAME}-${VERSION}-${DEVICE}_${FILE_DATE_STR}"
+
+        echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
+
+        # Prepare release body
+        echo "Release: $PRODUCT_NAME" > release.txt
+        echo "Version: $VERSION" >> release.txt
+        echo "Device: $DEVICE" >> release.txt
+        echo "Build date: $FILE_DATE_STR" >> release.txt
+
+        if [ -n "${RELEASE_DIR:-}" ] && [ -d "$RELEASE_DIR" ]; then
+          echo "" >> release.txt
+          echo "Artifacts:" >> release.txt
+          ls -1 "$RELEASE_DIR" >> release.txt || true
+        fi
+
+        # Optional GoFile link if produced earlier
+        [ "${UPLOAD_GOFILE:-false}" = true ] && [ -n "${{ steps.gofile.outputs.url }}" ] && echo "🔗 [GoFile](${{ steps.gofile.outputs.url }})" >> release.txt || true
+
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware to release
