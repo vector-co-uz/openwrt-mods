@@ -1,5 +1,5 @@
 
-name: Immortalwrt Builder
+name: Immortalwrt 24.10 Builder
 
 on:
   repository_dispatch:
@@ -10,7 +10,7 @@ permissions:
 
 env:
   REPO_URL: https://github.com/immortalwrt/immortalwrt
-  REPO_BRANCH: openwrt-23.05
+  REPO_BRANCH: openwrt-24.10
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: .config
   DIY_P1_SH: diy-part1.sh
@@ -100,15 +100,51 @@ jobs:
       if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
         cd imwrt/bin/targets/*/*
+
+        # Определяем версию OpenWrt/ImmortalWrt
+        VERSION=$(grep '^CONFIG_VERSION_NUMBER=' "$GITHUB_WORKSPACE/imwrt/.config" | cut -d'"' -f2)
+
+        if [ -z "$VERSION" ]; then
+          echo "ERROR: Cannot determine firmware version"
+          exit 1
+        fi
+
+        # Берём только major.minor
+        VERSION_SHORT=$(echo "$VERSION" | grep -oE '^[0-9]+\.[0-9]+')
+
+        if [ -z "$VERSION_SHORT" ]; then
+          echo "ERROR: Cannot determine major.minor version from: $VERSION"
+          exit 1
+        fi
+
+        echo "Detected OpenWrt version: $VERSION"
+        echo "Version for filename: $VERSION_SHORT"
+
         initram_file="$(ls *initramfs-kernel.bin 2>/dev/null | head -n 1)"
         test -n "$initram_file"
+
         mkdir -p "$GITHUB_WORKSPACE/artifacts/release"
-        cp -a "$initram_file" "$GITHUB_WORKSPACE/artifacts/release/"
-        sha256sum "$initram_file" > "$GITHUB_WORKSPACE/artifacts/release/initramfs-sha256sums"
-        cp -a profiles.json "$GITHUB_WORKSPACE/artifacts/release/initramfs-profiles.json"
-        echo "INITRAM_FIRMWARE=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
-        echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
-        echo "status=success" >> $GITHUB_OUTPUT
+
+        NEW_NAME="immortalwrt-${VERSION_SHORT}-mi4a-32mb-initramfs-kernel.bin"
+
+        cp -a "$initram_file" \
+          "$GITHUB_WORKSPACE/artifacts/release/$NEW_NAME"
+
+        sha256sum \
+          "$GITHUB_WORKSPACE/artifacts/release/$NEW_NAME" \
+          > "$GITHUB_WORKSPACE/artifacts/release/$NEW_NAME.sha256sums"
+
+        cp -a profiles.json \
+          "$GITHUB_WORKSPACE/artifacts/release/immortalwrt-${VERSION_SHORT}-mi4a-32mb-profiles.json"
+
+        echo "INITRAM_FIRMWARE=$GITHUB_WORKSPACE/artifacts/release" >> "$GITHUB_ENV"
+        echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> "$GITHUB_ENV"
+        echo "VERSION_SHORT=$VERSION_SHORT" >> "$GITHUB_ENV"
+
+        echo "Created:"
+        echo "  $NEW_NAME"
+
+        echo "status=success" >> "$GITHUB_OUTPUT"
 
     - name: Upload initram firmware
       uses: actions/upload-artifact@main
@@ -143,12 +179,103 @@ jobs:
       if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
         cd imwrt/bin/targets/*/*
-        rm -rf packages
+
+        VERSION="${VERSION_SHORT}"
+
         mkdir -p "$GITHUB_WORKSPACE/artifacts/release"
-        find . -maxdepth 1 -type f ! -name '*initram*' -exec cp -a {} "$GITHUB_WORKSPACE/artifacts/release/" \;
-        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
-        echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> $GITHUB_ENV
-        echo "status=success" >> $GITHUB_OUTPUT
+
+        # -------------------------
+        # Sysupgrade firmware
+        # -------------------------
+
+        for file in *squashfs-sysupgrade.bin; do
+          [ -f "$file" ] || continue
+
+          cp -a "$file" \
+            "$GITHUB_WORKSPACE/artifacts/release/immortalwrt-${VERSION}-mi4a-32mb-squashfs-sysupgrade.bin"
+
+          echo "Renamed:"
+          echo "  $file"
+          echo "  -> immortalwrt-${VERSION}-mi4a-32mb-squashfs-sysupgrade.bin"
+        done
+
+
+        # -------------------------
+        # Manifest
+        # -------------------------
+
+        for file in *manifest; do
+          [ -f "$file" ] || continue
+
+          cp -a "$file" \
+            "$GITHUB_WORKSPACE/artifacts/release/immortalwrt-${VERSION}-mi4a-32mb.manifest"
+
+          echo "Renamed:"
+          echo "  $file"
+          echo "  -> immortalwrt-${VERSION}-mi4a-32mb.manifest"
+        done
+
+
+        # -------------------------
+        # ImageBuilder
+        # -------------------------
+
+        for file in *imagebuilder*.tar.xz; do
+          [ -f "$file" ] || continue
+
+          cp -a "$file" \
+            "$GITHUB_WORKSPACE/artifacts/release/immortalwrt-${VERSION}-mi4a-32mb-imagebuilder.tar.xz"
+
+          echo "Renamed:"
+          echo "  $file"
+          echo "  -> immortalwrt-${VERSION}-mi4a-32mb-imagebuilder.tar.xz"
+        done
+
+
+        # -------------------------
+        # ImageBuilder checksum
+        # -------------------------
+
+        for file in *imagebuilder*.tar.xz.sha256sums; do
+          [ -f "$file" ] || continue
+
+          cp -a "$file" \
+            "$GITHUB_WORKSPACE/artifacts/release/immortalwrt-${VERSION}-mi4a-32mb-imagebuilder.tar.xz.sha256sums"
+
+          echo "Renamed:"
+          echo "  $file"
+          echo "  -> immortalwrt-${VERSION}-mi4a-32mb-imagebuilder.tar.xz.sha256sums"
+        done
+
+
+        # -------------------------
+        # profiles.json
+        # -------------------------
+
+        if [ -f profiles.json ]; then
+          cp -a profiles.json \
+            "$GITHUB_WORKSPACE/artifacts/release/immortalwrt-${VERSION}-mi4a-32mb-profiles.json"
+        fi
+
+
+        # -------------------------
+        # SHA256
+        # -------------------------
+
+        cd "$GITHUB_WORKSPACE/artifacts/release"
+
+        sha256sum \
+          immortalwrt-${VERSION}-mi4a-32mb-squashfs-sysupgrade.bin \
+          > immortalwrt-${VERSION}-mi4a-32mb-squashfs-sysupgrade.bin.sha256sums
+
+
+        echo "FIRMWARE=$GITHUB_WORKSPACE/artifacts/release" >> "$GITHUB_ENV"
+        echo "RELEASE_DIR=$GITHUB_WORKSPACE/artifacts/release" >> "$GITHUB_ENV"
+
+        echo "=== RELEASE FILES ==="
+        ls -lh
+
+        echo "status=success" >> "$GITHUB_OUTPUT"
 
     - name: Upload squash firmware
       uses: actions/upload-artifact@main
@@ -176,66 +303,3 @@ jobs:
         body_path: release.txt
         files: |
           ${{ env.RELEASE_DIR }}/*
-
-    # ============================================================
-    # GOTIFY - FINAL BUILD STATUS
-    # ============================================================
-
-    - name: Notify Gotify - final build status
-      if: always()
-      env:
-        GOTIFY_URL: ${{ secrets.GOTIFY_URL }}
-        GOTIFY_TOKEN: ${{ secrets.GOTIFY_TOKEN }}
-        RELEASE_TAG: ${{ steps.tag.outputs.release_tag }}
-      run: |
-        if [ "${{ job.status }}" = "success" ]; then
-
-          TITLE="🎉 ImmortalWrt Build SUCCESS"
-
-          MESSAGE="Сборка успешно завершена%0A%0A"
-          MESSAGE="${MESSAGE}Device: Xiaomi Mi Router 4A Gigabit 32MB%0A"
-          MESSAGE="${MESSAGE}Branch: $REPO_BRANCH%0A"
-          MESSAGE="${MESSAGE}IMAGE_SIZE: 30208k%0A"
-          MESSAGE="${MESSAGE}Commit: $GITHUB_SHA%0A%0A"
-
-          if [ -n "$RELEASE_TAG" ]; then
-            MESSAGE="${MESSAGE}Release:%0A"
-            MESSAGE="${MESSAGE}$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG%0A%0A"
-          fi
-
-          MESSAGE="${MESSAGE}Workflow:%0A"
-          MESSAGE="${MESSAGE}$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-
-          PRIORITY=10
-
-        else
-
-          TITLE="❌ ImmortalWrt Build FAILED"
-
-          MESSAGE="Сборка завершилась ошибкой%0A%0A"
-          MESSAGE="${MESSAGE}Device: Xiaomi Mi Router 4A Gigabit 32MB%0A"
-          MESSAGE="${MESSAGE}Branch: $REPO_BRANCH%0A"
-          MESSAGE="${MESSAGE}Commit: $GITHUB_SHA%0A%0A"
-          MESSAGE="${MESSAGE}Logs:%0A"
-          MESSAGE="${MESSAGE}$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-
-          PRIORITY=10
-
-        fi
-
-        curl -fsS \
-          -X POST \
-          "$GOTIFY_URL/message" \
-          -H "X-Gotify-Key: $GOTIFY_TOKEN" \
-          -F "title=$TITLE" \
-          -F "message=$MESSAGE" \
-          -F "priority=$PRIORITY"
-
-    - name: Remove old Releases
-      uses: dev-drprasad/delete-older-releases@master
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
-      with:
-        keep_latest: 3
-        delete_tags: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
