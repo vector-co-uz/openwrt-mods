@@ -20,6 +20,9 @@ src-link fantastic_packages_luci     fantastic_packages/feeds/luci
 src-link fantastic_packages_special  fantastic_packages/feeds/special
 EOF
 
+git clone https://github.com/VizzleTF/luci-theme-footstrap.git package/footstrap
+git clone https://github.com/gSpotx2f/luci-app-internet-detector.git package/internet-detector
+
 # add custom DTS
 mkdir -p target/linux/ramips/image/mt7621
 
