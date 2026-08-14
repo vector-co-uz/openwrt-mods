@@ -172,7 +172,6 @@ jobs:
         cd imwrt
         echo "Checking squash config for 32MB device"
         grep -q '^CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_mi-router-4a-gigabit-32mb=y' .config
-        make defconfig
         make download -j8
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 V=s
