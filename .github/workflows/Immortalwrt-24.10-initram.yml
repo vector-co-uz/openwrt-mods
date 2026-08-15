@@ -1,5 +1,5 @@
 
-name: Immortalwrt 24.10 Builder
+name: Immortalwrt 24.10 Builder Initram
 
 on:
   repository_dispatch:
