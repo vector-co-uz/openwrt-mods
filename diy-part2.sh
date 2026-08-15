@@ -23,8 +23,10 @@
 
 mkdir -p files/etc/uci-defaults
 
-cp -f "$script_dir/files/99-vector-settings" files/etc/uci-defaults/99-vector-settings
+cp -f "$GITHUB_WORKSPACE/files/99-vector-settings" \
+    files/etc/uci-defaults/99-vector-settings
 chmod +x files/etc/uci-defaults/99-vector-settings
 
-cp -f "$script_dir/files/40-luci-theme" files/etc/uci-defaults/40-luci-theme
+cp -f "$GITHUB_WORKSPACE/files/40-luci-theme" \
+    files/etc/uci-defaults/40-luci-theme
 chmod +x files/etc/uci-defaults/40-luci-theme
