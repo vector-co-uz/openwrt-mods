@@ -19,11 +19,12 @@
 # Modify hostname
 #sed -i 's/OpenWrt/P3TERX-Router/g' package/base-files/files/bin/config_generate
 
+# Add additional first-boot settings
+
 mkdir -p files/etc/uci-defaults
 
-# Add additional first-boot settings
-cp -f "$PWD/files/99-vector-settings" files/etc/uci-defaults/99-vector-settings
+cp -f "$script_dir/files/99-vector-settings" files/etc/uci-defaults/99-vector-settings
 chmod +x files/etc/uci-defaults/99-vector-settings
 
-cp -f "$PWD/files/40-luci-theme" files/etc/uci-defaults/40-luci-theme
+cp -f "$script_dir/files/40-luci-theme" files/etc/uci-defaults/40-luci-theme
 chmod +x files/etc/uci-defaults/40-luci-theme

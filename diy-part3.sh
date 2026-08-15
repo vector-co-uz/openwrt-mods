@@ -1,13 +1,5 @@
 #!/bin/bash
 #
-
-# add proton theme package directly to the OpenWrt tree
-rm -rf package/luci-theme-proton2025
-mkdir -p package
-if [ ! -d package/luci-theme-proton2025 ]; then
-    git clone --depth 1 https://github.com/ChesterGoodiny/luci-theme-proton2025.git package/luci-theme-proton2025
-fi
-
 # add fantastic-packages feed according to upstream instructions
 rm -rf fantastic_packages
 if [ ! -d fantastic_packages ]; then
@@ -20,6 +12,7 @@ src-link fantastic_packages_luci     fantastic_packages/feeds/luci
 src-link fantastic_packages_special  fantastic_packages/feeds/special
 EOF
 
+git clone --depth 1 https://github.com/ChesterGoodiny/luci-theme-proton2025.git package/luci-theme-proton2025
 git clone https://github.com/VizzleTF/luci-theme-footstrap.git package/footstrap
 git clone https://github.com/gSpotx2f/luci-app-internet-detector.git package/internet-detector
 git clone https://github.com/alexwbaule/telegramopenwrt.git package/telegram-openwrt
