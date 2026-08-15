@@ -24,17 +24,6 @@ git clone https://github.com/VizzleTF/luci-theme-footstrap.git package/footstrap
 git clone https://github.com/gSpotx2f/luci-app-internet-detector.git package/internet-detector
 git clone https://github.com/alexwbaule/telegramopenwrt.git package/telegram-openwrt
 
-# 
-mkdir -p package/small-package
-
-git clone --depth=1 --filter=blob:none --sparse \
-    https://github.com/kenzok8/small-package.git \
-    package/small-package
-
-cd package/small-package
-
-git sparse-checkout set luci-app-iperf3-server
-
 # add custom DTS
 mkdir -p target/linux/ramips/image/mt7621
 
