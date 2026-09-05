@@ -35,7 +35,6 @@
 
 В прошивку добавлены дополнительные источники пакетов:
 
-- [🔗](https://github.com/kiddin9/Kwrt) openwrt.ai/kwrt
 - [🔗](https://github.com/fantastic-packages/packages) fantastic-packages
 
 ---
