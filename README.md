@@ -14,7 +14,7 @@
 - **ImmortalWRT 24.10.6**
 - Минимальный набор пакетов
 - Оптимизирована под 32 МБ flash
-- Тема Luci изменен на легковесный https://github.com/VizzleTF/luci-theme-footstrap.git package/footstrap
+- Тема Luci изменен на легковесный [footstrap](https://github.com/VizzleTF/luci-theme-footstrap.git)
 
 ---
 
